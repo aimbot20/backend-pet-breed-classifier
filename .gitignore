@@ -31,10 +31,6 @@ ENV/
 *.swp
 *.swo
 
-# Model files (if you want to exclude them)
-*.keras
-*.h5
-
 # Misc
 .DS_Store
 .env

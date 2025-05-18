@@ -9,8 +9,30 @@ import pandas as pd
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-# Load the model
-model = tf.keras.models.load_model('my_model_50epochs.keras')
+# Update model loading with legacy mode and custom objects
+try:
+    # First try loading with legacy mode
+    model = tf.keras.models.load_model('my_model_50epochs.keras', compile=False)
+except Exception as e:
+    print(f"First loading attempt failed: {e}")
+    try:
+        # Try loading with custom objects if needed
+        custom_objects = {
+            'Functional': tf.keras.models.Model
+        }
+        model = tf.keras.models.load_model('my_model_50epochs.keras', custom_objects=custom_objects, compile=False)
+    except Exception as e:
+        print(f"Second loading attempt failed: {e}")
+        # If both attempts fail, try to save and reload the model
+        if os.path.exists('my_model_50epochs.keras'):
+            try:
+                temp_model = tf.keras.models.load_model('my_model_50epochs.keras', compile=False)
+                temp_model.save('temp_model.keras', save_format='keras')
+                model = tf.keras.models.load_model('temp_model.keras', compile=False)
+                os.remove('temp_model.keras')
+            except Exception as e:
+                print(f"Model conversion failed: {e}")
+                raise Exception("Failed to load model after multiple attempts")
 
 # Load class indices and create a mapping dictionary
 class_df = pd.read_excel('class_indices.xlsx')
